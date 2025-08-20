@@ -13,6 +13,10 @@
 % preprocessing focusing on removing backgrond noise, TMS induced artifacts, muscular artifacts and eye movements. The preprocessing might be
 % sufficient to explore iTEPS in datasets contaminated with muscular (or other type of) artifacts.
 
+% Only edit Section 0 to set the dataset you want to load. 
+% All other sections are preconfigured—run them block by block; 
+% they will progress semi-automatically and require no further changes.
+
 % ---> STEPS:
 % 0) Load data
 % 1) Epoch
