@@ -11,6 +11,10 @@
 % sufficient to explore iTEPS in datasets non contaminated with large
 % muscular (or other type of) artefacts.
 
+% Only edit Section 0 to set the dataset you want to load. 
+% All other sections are preconfigured—run them block by block; 
+% they will progress semi-automatically and require no further changes.
+
 
 % ---> STEPS:
 % 0) Load data
