@@ -3,6 +3,10 @@
 % DRCMR 2025 - XCT& LS  - BrainStim Methods group
 
 % Analyses pipeline 
+% Only edit Section 0 to set the dataset you want to load. 
+% All other sections are preconfigured—run them block by block; 
+% they will progress semi-automatically and require no further changes.
+
 
 % --> GENERAL INFO:
 % The current analyses pieplpile is intended to extract from a PREPORCESSED DATSET the following results:
