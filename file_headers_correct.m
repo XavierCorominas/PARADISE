@@ -1,11 +1,17 @@
 
-%% CODE to CORRECT HEADERS OF EEG FILES that its names have been manually modified:
+%% Script to Correct EEG File Headers
+% This script updates the header information (.vhdr / .vmrk files) so that
+% the internal "DataFile" and "MarkerFile" fields match the actual file 
+% names on disk. 
+%
+% Use this script after EEG files have been manually renamed to ensure 
+% consistency between file names and their header references.
 
-%specify your data folder root.
+%Sspecify your data folder root.
 baseDir = '/mnt/projects/PARADISE/PARADISE_1/XEB/EEG_clean/';
 
 
-%% Run this section on block.No need to modify anything.
+%% Run this section on block. No need to modify anything.
 
 % List all .VMK files and change the name for the actual file names
 S = dir(fullfile(baseDir, '*.vmrk'));
