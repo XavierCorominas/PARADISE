@@ -11,6 +11,7 @@
 % sufficient to explore iTEPS in datasets non contaminated with large
 % muscular (or other type of) artefacts.
 
+
 % Only edit Section 0 to set the dataset you want to load. 
 % All other sections are preconfigured—run them block by block; 
 % they will progress semi-automatically and require no further changes.
@@ -69,35 +70,62 @@ addpath('/home/xavi/Documents/PROJECTS/iTEPS/eeg_analyses_tool/TMS_EEG_preproces
 
 %% 0. LOAD DATA
 
-% Open EEGlab 
+% Selec file:---------> 
 eeglab;
  % --------------------------->  Modify subject condition to load
 Subject = 'XEB' % XPB or XEB or XTC
 Coil = 'coilB65' % coilB35 or coilB65
 Target = 'SFG' % SFG or SPL
 Orientation = 'APPA' % LM or APPA
-Intensity = '70' % 70 or 80 or 90 or 100 
+Intensity = '90' % 70 or 80 or 90 or 100 
 MT_MSO = 'RMT'% RMT or MSO
 Paradigm = 'tripulse' % singlepulse or tripulse
-% <-----------------------------
+% <--------------------------------------------------------------
 
 
 
 
-% Dataset name structure ----->  [Subject]_[Coil]_[Target]_[Orientation]_[Intensity]_[Paradigm].ext
-% Define file to load 
+% ---- build dataset name and path ----
+name_dataset = sprintf('%s_%s_%s_%s_%s%s_%s.vhdr', ...
+    Subject, Coil, Target, Orientation, Intensity, MT_MSO, Paradigm);
+
+path_dataset = fullfile('/mnt/projects/PARADISE/PARADISE_1', Subject, 'EEG_clean');
+filePath     = fullfile(path_dataset, name_dataset);
+
 name = [Subject,' ',Coil,' ',Target,' ',Orientation,' ',Intensity,MT_MSO,' ',Paradigm];
-name_dataset = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',Paradigm,'.vhdr']; 
-path_dataset = ['/mnt/projects/PARADISE/PARADISE_1/',Subject,'/EEG_clean/'];
+%name_dataset = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',Paradigm,'_',pulse,'_cleaned_pipeline_',processing_pipeline,'.set']; 
 
-%load file
-EEG = pop_loadbv(path_dataset, name_dataset);
-eeglab redraw
+
+% ---- sanity checks + conditional load ----
+if ~isfolder(path_dataset)
+    error('Folder not found: %s', path_dataset);
+end
+
+if isfile(filePath)
+    fprintf('Loading: %s\n', filePath);
+    EEG = pop_loadbv(path_dataset, name_dataset);
+    eeglab redraw
+else
+    warning('File does not exist: %s', filePath);
+    % Show helpful candidates in the same folder
+    cand = dir(fullfile(path_dataset, sprintf('%s_*.vhdr', Subject)));
+    if isempty(cand), cand = dir(fullfile(path_dataset, '*.vhdr')); end
+    if isempty(cand)
+        fprintf('No .vhdr files in %s\n', path_dataset);
+    else
+        fprintf('Available .vhdr files in %s:\n', path_dataset);
+        for k = 1:min(numel(cand), 20)
+            fprintf('  - %s\n', cand(k).name);
+        end
+        if numel(cand) > 20
+            fprintf('  ... (%d more)\n', numel(cand)-20);
+        end
+    end
+end
 
 %% 1. EPOCH
 
-%Epoch: assuming that onliny the first pulseof the tripulse burst is
-% marked as event
+%Epoch: assuming that onliny the first pulseof the tripulse burst is marked as event
 EEG = pop_epoch( EEG, {  'R  8'  }, [-0.5         0.5]); % TMS pulses are stamped on the EEG as 'R  8' markers. Modify your marker if necessary for epoching.
 eeglab redraw
 
@@ -156,7 +184,8 @@ EEGr = EEG;
 
 % Baseline correct,Filter and  Demean
 EEGr = pop_rmbase( EEGr, [-110 -10] ,[]);
-EEGr = pop_tesa_filtbutter(EEGr, 0.2, 25000, 2, 'bandpass');
+%EEGr = pop_tesa_filtbutter(EEGr, 0.2, 5000, 2, 'bandpass');
+EEG = pop_tesa_filtbutter( EEGr, [], 5000, 2, 'lowpass' ); %zero-phase, 4th-order low pass butterworth filter allowing frequencies below 25000 Hz
 EEGr = pop_rmbase( EEGr, [-500 499.9] ,[]); % De meaning assuming a epoch from -500 499.9
 
 % Mean of Channels of itnerest
@@ -178,7 +207,7 @@ ylim([-80 80]);
 set(gca, 'FontSize', 24, 'FontName', 'Arial');
 xlabel('Time (ms)', 'FontSize', 24, 'FontName', 'Arial');
 ylabel('Amplitude (µV)', 'FontSize', 24, 'FontName', 'Arial');
-title('Raw EEG Signal 0.2-25000Hz', 'FontSize', 24, 'FontName', 'Arial');
+title('Raw EEG Signal 0.2-5000Hz', 'FontSize', 24, 'FontName', 'Arial');
 
 % Legend
 % Create dummy lines for legend
@@ -239,10 +268,10 @@ end
 %% SAVE DATASET With TMS pulse?  Then execute this cell to save
 %save_name
 name_save = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',Paradigm];
-fname = strjoin(name_save, '');  % joins: "XEB_coilB65_SFG_APPA_70RMT_tripulse"
+%fname = strjoin(name_save, '');  % joins: "XEB_coilB65_SFG_APPA_70RMT_tripulse"
 
 % Add your suffix + extension
-fname = fname + "_with_pulse_cleaned_pipeline_basic.set";  % still a string scalar
+fname = name_save + "_with_pulse_cleaned_pipeline_basic.set";  % still a string scalar
 
 % Save (cast to char for EEGLAB)
 EEG = pop_saveset(EEG, ...
@@ -276,11 +305,11 @@ ylabel('Amplitude (µV)', 'FontSize', 24, 'FontName', 'Arial');
 Paradigm = string(Paradigm);  % ensure string scalar
 
 if Paradigm == "singlepulse"
-    TMSremoval_range = [-0.5 1.5];
+    TMSremoval_range = [-0.5 2];
     EEG = pop_tesa_removedata(EEG, TMSremoval_range);
 
 elseif Paradigm == "tripulse"
-    TMSremoval_range1 = [-0.5 5.8];
+    TMSremoval_range1 = [-0.5 6.4];
     EEG = pop_tesa_removedata(EEG, TMSremoval_range1);
 end
 eeglab redraw
@@ -391,7 +420,7 @@ ylabel('Amplitude (µV)', 'FontSize', 24, 'FontName', 'Arial');
 %% Run ICA to remove ocular moments, muscular contractions and decay artifacts
 
 % Resample for ica:
-EEG = pop_resample( EEG, 25000); % maybe 25000? 5000 is enough for the iTEPS and faster
+EEG = pop_resample( EEG, 5000); % maybe 25000? 5000 is enough for the iTEPS and faster
 
 %% 8. Prepare data for ICA
 
@@ -446,7 +475,8 @@ EEG = pop_tesa_compselect( EEG,'plotTimeX',[-200,499],'muscleFreqIn',[7,70],'tms
 
 
 % Alternatively do it manually
-%EEG = pop_tesa_compplot( EEG,'figSize','medium','plotTimeX',[-50 250],'plotFreqX',[1 500], 'freqScale','log', 'saveWeights','off');
+% EEG = pop_tesa_compplot( EEG,'figSize','medium','plotTimeX',[-50 250],'plotFreqX',[1 500], 'freqScale','log', 'saveWeights','off');
+
 
 %% Plot data
 figure; pop_timtopo(EEG, [-5  15], [6.4], 'ERP data and scalp maps');
@@ -548,6 +578,3 @@ EEG = pop_saveset(EEG, ...
 
 
 %% END
-
-name_save
-path_dataset
