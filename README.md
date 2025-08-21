@@ -1,4 +1,4 @@
-# **PARADISE: preprocessing and analyses examples (TEP and GMFP)**
+# **PARADISE: TME-EEG preprocessing and analyses examples (TEP and GMFP)**
 
 Laura Sakalauskaite
 
