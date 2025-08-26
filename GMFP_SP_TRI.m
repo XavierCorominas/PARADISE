@@ -1,4 +1,6 @@
-%% COMPARE GMFP SP vs TRI
+%% COMPARE GMFP OF TWO DIFFERENT SELECTED CONDITIONS
+
+
 
 clear all;
 close all;
@@ -16,41 +18,48 @@ addpath('/home/xavi/Documents/PROJECTS/iTEPS/eeg_analyses_tool/TMS_EEG_preproces
 
 %% 0. Load dataset on interest to analyse.
 
-
-% Open EEGlab 
- % --------------------------->  Modify subject condition to load
+% CONDITION 1
+% ---------------------------------------->  Modify subject condition to load
 Subject = 'XEB' % XPB or XEB or XTC
 Coil = 'coilB65' % coilB35 or coilB65
 Target = 'SFG' % SFG or SPL
-Orientation = 'APPA' % LM or APPA
-Intensity = '90' % 70 or 80 or 90 or 100 
+Orientation = 'LM' % LM or APPA
+Intensity = '100' % 70 or 80 or 90 or 100 
 MT_MSO = 'RMT'% RMT or MSO
-ParadigmSP = 'singlepulse' % singlepulse or tripulse
-ParadigmTRI = 'tripulse' % singlepulse or tripulse
-Paradigm = 'tripulse' % singlepulse or tripulse
-pulse = 'no_pulse'; % with_pulse  or  no_pulse
+ParadigmSP = 'tripulse' % singlepulse or tripulse
+pulseSP = 'no_pulse'; % with_pulse  or  no_pulse
 processing_pipeline = 'basic'  % basic   or advanced
-% <-----------------------------
 
 
 
-
-
-% Define SP file to load 
+% LOAD CONDITION1  
 nameSP = [Subject,' ',Coil,' ',Target,' ',Orientation,' ',Intensity,MT_MSO,' ',ParadigmSP];
-name_datasetSP = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',ParadigmSP,'_',pulse,'_cleaned_pipeline_',processing_pipeline,'.set']; 
+name_datasetSP = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',ParadigmSP,'_',pulseSP,'_cleaned_pipeline_',processing_pipeline,'.set']; 
 path_dataset = ['/mnt/projects/PARADISE/PARADISE_1/',Subject,'/EEG_clean/'];
 % LOAD file with fieltrip
 cfg = []; 
      cfg.lpfilter        = 'no';
      cfg.dataset = [path_dataset, name_datasetSP];
      dataSP = ft_preprocessing(cfg);
+% <--------------------------------------------------------------------
+%% LOAD CONDITION 2
 
+% CONDITION 1
+% ---------------------------------------->  Modify subject condition to load
+Subject = 'XEB' % XPB or XEB or XTC
+Coil = 'coilB35' % coilB35 or coilB65
+Target = 'SFG' % SFG or SPL
+Orientation = 'LM' % LM or APPA
+Intensity = '100' % 70 or 80 or 90 or 100 
+MT_MSO = 'MSO'% RMT or MSO
+ParadigmTRI = 'tripulse' % singlepulse or tripulse
+pulseTRI = 'no_pulse'; % with_pulse  or  no_pulse
+processing_pipeline = 'basic'  % basic   or advanced
 
 
 % Define TRI file to load 
 nameTRI = [Subject,' ',Coil,' ',Target,' ',Orientation,' ',Intensity,MT_MSO,' ',ParadigmTRI];
-name_datasetTRI = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',ParadigmTRI,'_',pulse,'_cleaned_pipeline_',processing_pipeline,'.set']; 
+name_datasetTRI = [Subject,'_',Coil,'_',Target,'_',Orientation,'_',Intensity,MT_MSO,'_',ParadigmTRI,'_',pulseTRI,'_cleaned_pipeline_',processing_pipeline,'.set']; 
 path_dataset = ['/mnt/projects/PARADISE/PARADISE_1/',Subject,'/EEG_clean/'];
 % LOAD file with fieltrip
 cfg = []; 
@@ -153,9 +162,10 @@ TEP_bc_gmfp_gavTRI = ft_preprocessing(cfg, TEP_bc_gmfp_gavTRI);
 
 %% 3. Shift SP data to match the time of the last pulse in the TRI condition
 
+pulseSP = strtrim(string(pulseSP));  % normalize to a string scalar
+pulseTRI = strtrim(string(pulseTRI));  % normalize to a string scalar
 
-pulse = strtrim(string(pulse));  % normalize to a string scalar
-if pulse == "no_pulse" 
+if pulseSP == "no_pulse" && pulseTRI == "no_pulse"
         
             % PLOT GMFP
             % --- select the original window ---
@@ -171,7 +181,12 @@ if pulse == "no_pulse"
             t_up_ms = linspace(t_ms(1), t_ms(end), size(seg_up,2));
             
             % --- delay by 4.4 ms with left zero-padding (keep same time axis length) ---
-            delay_ms = 4.4;
+            ParadigmSP = strtrim(string(ParadigmSP));  % normalize to a string scalar
+            if ParadigmSP == "singlepulse"
+                delay_ms = 4.4;
+            elseif ParadigmSP == "tripulse"
+                delay_ms = 0;
+            end
             dt_ms    = median(diff(t_up_ms));
             n_shift  = max(0, round(delay_ms / dt_ms));          % samples to shift
             
@@ -192,7 +207,7 @@ if pulse == "no_pulse"
             xlabel('Time (ms)'); ylabel('Amplitude (µV)')
             xlim([-5 15]); 
             ylim([-10 10])
-            title('GMFP EEG Signal 0.2–2000 Hz (delayed by 4.4 ms)', 'FontSize', 24, 'FontName', 'Arial');
+            title('GMFP EEG Signal 0.2–2000 Hz', 'FontSize', 24, 'FontName', 'Arial');
             set(gca,'FontName','Arial','FontSize',20,'FontWeight','bold','LineWidth',1.5)
             
             
@@ -211,7 +226,14 @@ if pulse == "no_pulse"
             t_up_ms = linspace(t_ms(1), t_ms(end), size(seg_up,2));
             
             % --- delay by 4.4 ms with left zero-padding (keep same time axis length) ---
-            delay_ms = 0;
+            
+            ParadigmTRI = strtrim(string(ParadigmTRI));  % normalize to a string scalar
+            if ParadigmTRI == "singlepulse"
+                delay_ms = 4.4;
+            elseif ParadigmTRI == "tripulse"
+                delay_ms = 0;
+            end
+
             dt_ms    = median(diff(t_up_ms));
             n_shift  = max(0, round(delay_ms / dt_ms));          % samples to shift
             
@@ -233,7 +255,7 @@ if pulse == "no_pulse"
             xlim([-5 15]); 
             
             name = [Subject,' ',Coil,' ',Target,' ',Orientation,' ',Intensity,MT_MSO,' ',];
-            title(['GMFP ' name], 'FontSize', 24, 'FontName', 'Arial');
+            title('GMFP EEG Signal 0.2–2000 Hz', 'FontSize', 24, 'FontName', 'Arial');
             set(gca,'FontName','Arial','FontSize',20,'FontWeight','bold','LineWidth',1.5)
 
   
@@ -241,9 +263,9 @@ if pulse == "no_pulse"
             patch([-0.5 -0.5 6.4 6.4], [yl(1) yl(2) yl(2) yl(1)], ...
                   [0.8 0.8 0.8], 'FaceAlpha',0.9, 'EdgeColor','none');
 
-            legend({'SP','TRI'}, 'Location','northeast');
+            legend(nameSP,nameTRI, 'Location','northeast');
 
-elseif pulse == "with_pulse"
+elseif pulseSP == "with_pulse" || pulseTRI == "with_pulse"
 
 % --- select the original window ---
             idx   = 1:3001;
@@ -258,7 +280,13 @@ elseif pulse == "with_pulse"
             t_up_ms = linspace(t_ms(1), t_ms(end), size(seg_up,2));
             
             % --- delay by 4.4 ms with left zero-padding (keep same time axis length) ---
-            delay_ms = 4.4;
+            ParadigmSP= strtrim(string(ParadigmSP));  % normalize to a string scalar
+            if ParadigmSP == "singlepulse"
+                delay_ms = 4.4;
+            elseif ParadigmSP == "tripulse"
+                delay_ms = 0;
+            end
+
             dt_ms    = median(diff(t_up_ms));
             n_shift  = max(0, round(delay_ms / dt_ms));          % samples to shift
             
@@ -279,13 +307,13 @@ elseif pulse == "with_pulse"
             xlabel('Time (ms)'); ylabel('Amplitude (µV)')
             %xlim([-5 15]); 
             ylim([-10 10])
-            title('GMFP EEG Signal 0.2–2000 Hz (delayed by 4.4 ms)', 'FontSize', 24, 'FontName', 'Arial');
+            title('GMFP EEG Signal 0.2–2000 Hz', 'FontSize', 24, 'FontName', 'Arial');
             set(gca,'FontName','Arial','FontSize',20,'FontWeight','bold','LineWidth',1.5)
 
             
             
 
-                       idx   = 1:3001;
+            idx   = 1:3001;
             t_ms  = TEP_bc_gmfp_gavTRI.time(idx) * 1000;     % ms
             seg   = TEP_bc_gmfp_gavTRI.avg(:, idx);          % [channels x N]
             
@@ -297,7 +325,13 @@ elseif pulse == "with_pulse"
             t_up_ms = linspace(t_ms(1), t_ms(end), size(seg_up,2));
             
             % --- delay by 4.4 ms with left zero-padding (keep same time axis length) ---
-            delay_ms = 0;
+            ParadigmTRI = strtrim(string(ParadigmTRI));  % normalize to a string scalar
+            if ParadigmTRI == "singlepulse"
+                delay_ms = 4.4;
+            elseif ParadigmTRI == "tripulse"
+                delay_ms = 0;
+            end
+
             dt_ms    = median(diff(t_up_ms));
             n_shift  = max(0, round(delay_ms / dt_ms));          % samples to shift
             
@@ -327,9 +361,10 @@ elseif pulse == "with_pulse"
             patch([-0.5 -0.5 6.4 6.4], [yl(1) yl(2) yl(2) yl(1)], ...
                   [0.8 0.8 0.8], 'FaceAlpha',0.9, 'EdgeColor','none');
 
-            legend({'SP','TRI'}, 'Location','northeast');
+            legend(nameSP,nameTRI, 'Location','northeast');
 
 
 end 
 
 
+%% END
